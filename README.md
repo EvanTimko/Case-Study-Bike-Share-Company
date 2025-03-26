@@ -9,5 +9,5 @@ now this is not the actual data. That is in the other to files in this github re
 
 ## Just to look
 
-- hit the brave file and it will open everything I did in the browser
+- Download the brave file and it will open everything I did in the browser
 - hint: thats the file ending in ".html"
