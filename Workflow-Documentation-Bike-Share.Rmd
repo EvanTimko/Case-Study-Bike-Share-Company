@@ -1,0 +1,216 @@
+---
+title: "Workflow-Documentation-Bike-Share"
+author: "Evan Timko"
+date: "2025-03-26"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Back Story
+
+A Bike-Share company in Chicago is hiring me as a junior data analyst. My team will dive into differences between casual users and annual members use. From these insights we have to leverage the data to convert casual users to members. Let’s go!
+
+## Objective
+
+Find out how members and casual consumers use the cyclistic bikes differently? And how could we convince casual riders to purchase a membership?
+
+## Setting up Enviroment
+
+Start by installing the required packages. If you have already installed
+then load `tidyverse`, `skimr`,`ggplot2`,`scales1`, `readxl`, `lubridate`, `dplyr` and `janitor` in this session,
+feel free to skip the code chunks in this step
+
+example of installing: install.packages("name_of_package")
+
+then load it in with: library(name_of_package)
+
+```{r setting up, warning=FALSE, include=FALSE}
+library(scales)
+library(readxl)
+library(lubridate)
+library(tidyverse)
+library(skimr)
+library(janitor)
+library(ggplot2)
+library(dplyr)
+```
+
+## Collecting Data
+
+We are going to load in two datasets for Bike-Share:
+
+-   202401-divvy-tripdata.csv
+-   202402-divvy-tripdata.csv
+-   202403-divvy-tripdata.csv
+-   202404-divvy-tripdata.csv
+-   ...
+-   202412-divvy-tripdata.csv
+
+Link to data source:
+<https://divvy-tripdata.s3.amazonaws.com/index.html>
+
+```{r Collecting and formatting, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+## we are storing the csv files into a dataframe/dataset
+df.Q1 <- read_csv("202401-divvy-tripdata.csv")
+df.Q2 <- read_csv("202402-divvy-tripdata.csv")
+df.Q3 <- read_csv("202403-divvy-tripdata.csv")
+df.Q4 <- read_csv("202404-divvy-tripdata.csv")
+df.Q5 <- read_csv("202405-divvy-tripdata.csv")
+df.Q6 <- read_csv("202406-divvy-tripdata.csv")
+df.Q7 <- read_csv("202407-divvy-tripdata.csv")
+df.Q8 <- read_csv("202408-divvy-tripdata.csv")
+df.Q9 <- read_csv("202409-divvy-tripdata.csv")
+df.Q10 <- read_csv("202410-divvy-tripdata.csv")
+df.Q11 <- read_csv("202411-divvy-tripdata.csv")
+df.Q12 <- read_csv("202412-divvy-tripdata.csv")
+
+
+## whenever your combining datasets make sure to check that all column name match
+colnames(df.Q1)
+colnames(df.Q2)
+colnames(df.Q3)
+colnames(df.Q4)
+colnames(df.Q5)
+colnames(df.Q6)
+colnames(df.Q7)
+colnames(df.Q8)
+colnames(df.Q9)
+colnames(df.Q10)
+colnames(df.Q11)
+colnames(df.Q12)
+
+## now we change the dataaset with differing names
+
+
+##combining all qaurters into one
+df19 <- rbind(df.Q1,df.Q2,df.Q3,df.Q4,df.Q5,df.Q6,df.Q7,df.Q8,df.Q9,df.Q10,df.Q11,df.Q12)
+
+
+```
+
+## Cleaning Data
+
+removing any empty, null, or duplicates
+
+```{r cleaning data}
+
+## removing any empty value or nulls
+df19_clean <- df19[complete.cases(df19), ]
+
+
+## cleaning up column names
+df19_clean <- clean_names(df19_clean)
+
+
+## removing duplicates rows
+df19_clean <- distinct(df19_clean)
+
+
+```
+
+## Look at data for df19_clean
+
+See if any columns are not needed right now? see if you should break
+down any columns into more? Are there any differences between the mass
+of data if using multiples data files?
+
+```{r}
+# add a day and month column
+df19_clean$month_name <- format(df19_clean$started_at, "%B")
+df19_clean$month <- month(df19_clean$started_at) ## this is so we can easily organize the data
+
+
+
+#the week day names
+df19_clean$week_day <- format(df19_clean$started_at, "%A")
+df19_clean$day <- day(df19_clean$started_at)
+
+# add time duration
+df19_clean$time_duration <- df19_clean$ended_at - df19_clean$started_at
+
+
+```
+
+## Order the dataframe by month using started_at
+
+```{r}
+df19_clean_arranged <- df19_clean %>%
+  arrange(month)
+```
+
+## graphing the total using for the year
+
+Analysis: From the data below we can see that depending on the season it
+affects the user's activity. It looks like the user only really like
+riding when tempeture is permitting.
+
+```{r graphing, fig.width=12, fig.height=8}
+## shows the amount of user in the year
+ggplot(data = df19_clean) +
+  geom_bar(mapping = aes(x=month)) +
+  labs(title = "User spread Over The Year", x = "Months", y = "Users") +
+  scale_y_continuous(labels = label_number(accuracy = 1))
+```
+
+## show the different user ride in the week
+
+Analysis: Over the spread of the week the member's tend to use the
+service more during the week. Now for the casual consumers they seem
+like the weekend is more popular with their demographic. This does not
+mean a casual consumers use it more on the weekend but rather that is
+best time in the week to reach a casual consumer. And the members are
+also using it on the weekend its just that they use it throughout the
+whole week, so that does not mean they are not using on the weekend like
+the casual customers. Maybe add a weekend only membership
+
+```{r, fig.width=16, fig.height=8}
+ggplot(data = df19_clean) +
+  geom_bar(mapping = aes(x=week_day, colour = member_casual)) + 
+  facet_wrap(~ member_casual) +
+  labs(title = "User spread Over The Week", x = "Months", y = "Users") +
+  scale_y_continuous(labels = label_number(accuracy = 1))
+```
+
+## show the different dynamic of users through the year
+
+analysis: members clearly have a higher consistency over casual user but
+that jump in warmer weather should show us that we need to adjust
+subscription to meet the desired time need for our service.
+
+```{r, fig.width=16, fig.height=8}
+# show the diferent user over the year
+ggplot(data = df19_clean) +
+  geom_bar(mapping = aes(x = month, color = member_casual)) +
+  facet_wrap(~ member_casual) +
+  labs(title = "User Different Spread Over The Year", x = "Months", y = "Users") +
+  scale_y_continuous(labels = label_number(accuracy = 1))
+
+  
+```
+
+## Conclusion
+
+Based on all the data I observed I would suggest offer different pricing plans:
+
+- One for just commuting on the weekdays
+- One for just commuting on the weekends
+- Students commuting
+- Possible week plans
+- 2/4/6 month plans to accommodate to seasonal users
+
+By offering these different form of pricing plans it will allow casual users a higher chance of using and iteraction with our business. Which can give a higher chance of people joining as well as better reach out to the community as we offer a diverse group of pricing plans.
+
+## Future Plans
+
+Dive deeper into different aspects data allowing more insight. Struggled a little with graphing some data but in the future I would like to graph ideal time for renting/using bikes. Duration of time bike was used, diving deep into that as someone could be using that to travel a great distance or just a small circle many time to create a long ride.
+
+## Conclusion
+###Thank you for checking out my case study. 
+
+
+
